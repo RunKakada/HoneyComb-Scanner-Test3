@@ -1,0 +1,11 @@
+{
+  "name": "AI Honeycomb Inspector v5 Professional",
+  "short_name": "Honeycomb v5",
+  "description": "AI-assisted concrete honeycomb inspection and professional report generation.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f6f8fc",
+  "theme_color": "#f6f8fc",
+  "orientation": "portrait-primary",
+  "icons": []
+}

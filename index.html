@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>AI Honeycomb Inspector v5 Professional</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#f6f8fc" />
+</head>
+<body>
+<main class="app-shell">
+  <section class="stage-card">
+    <video id="cameraVideo" autoplay playsinline muted></video>
+    <canvas id="processCanvas"></canvas>
+    <canvas id="arCanvas"></canvas>
+
+    <header class="top-bar">
+      <div class="brand-block">
+        <div class="brand-mark">AI</div>
+        <div>
+          <h1>AI Honeycomb Inspector</h1>
+          <p>v5 Professional · Concrete Condition Assessment</p>
+        </div>
+      </div>
+      <div id="modelBadge" class="status-badge warning">MODEL LOADING</div>
+    </header>
+
+    <div class="live-dashboard">
+      <article class="live-card">
+        <span>Voids</span><strong id="voidCount">0</strong>
+      </article>
+      <article class="live-card">
+        <span>Largest</span><strong id="largestAreaCm2">0.00 cm²</strong>
+      </article>
+      <article class="live-card wide">
+        <span>Status</span><strong id="scanStatusStrip">READY</strong>
+      </article>
+      <button id="statsBtn" class="icon-action" title="Scan Status">📋</button>
+    </div>
+
+    <div id="frozenBadge" class="frozen-badge hidden">⏸ FROZEN FRAME</div>
+
+    <nav class="control-bar">
+      <button id="startBtn" class="primary"><span>▶</span>Start</button>
+      <button id="freezeBtn"><span>⏸</span><b class="btn-label">Freeze</b></button>
+      <button id="overlayBtn"><span>◉</span><b class="btn-label">Full AR</b></button>
+      <button id="captureBtn"><span>📷</span>Capture</button>
+      <button id="reportBtn" class="accent"><span>📄</span>Report</button>
+      <button id="resetBtn"><span>↺</span>Reset</button>
+    </nav>
+  </section>
+
+  <aside class="side-panel">
+    <section class="panel-card">
+      <div class="panel-title">Inspection Workflow</div>
+      <div class="workflow-steps">
+        <div class="step active"><b>1</b><span>Scan</span></div>
+        <div class="step"><b>2</b><span>Capture</span></div>
+        <div class="step"><b>3</b><span>Info</span></div>
+        <div class="step"><b>4</b><span>Report</span></div>
+      </div>
+    </section>
+    <section class="panel-card">
+      <div class="panel-title">Live Statistics</div>
+      <div class="stats-grid compact">
+        <div><span>Model</span><strong id="modelStatus">Loading…</strong></div>
+        <div><span>FPS</span><strong id="fpsValue">0</strong></div>
+        <div><span>Elapsed</span><strong id="elapsedTime">00:00</strong></div>
+        <div><span>Concrete ROI</span><strong id="surfaceStatus">Active</strong></div>
+        <div><span>Total Area</span><strong id="totalAreaCm2">0.00 cm²</strong></div>
+        <div><span>Captures</span><strong id="sideCaptureCount">0</strong></div>
+      </div>
+    </section>
+    <section class="panel-card">
+      <div class="panel-title">Captured Photos</div>
+      <div id="captureThumbsRow" class="thumbs-row"><span class="empty-text">No captures yet.</span></div>
+    </section>
+  </aside>
+</main>
+
+<!-- Scan Status Sheet for mobile -->
+<div class="bottom-sheet-backdrop" id="sheetBackdrop"></div>
+<div class="bottom-sheet" id="bottomSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <h2>Scan Status</h2>
+    <button class="ghost-close" id="sheetClose">✕</button>
+  </div>
+  <div class="stats-grid">
+    <div><span>Status</span><strong id="scanStatus">READY</strong></div>
+    <div><span>AI Model</span><strong id="sheetModelStatus">See panel</strong></div>
+    <div><span>Voids Found</span><strong id="sheetVoidCount">0</strong></div>
+    <div><span>Total Area</span><strong id="totalAreaStrip">0.00 cm²</strong></div>
+  </div>
+</div>
+
+<!-- Report information modal: typing is isolated from heavy rendering -->
+<div class="modal-backdrop hidden" id="reportBackdrop"></div>
+<section class="report-modal hidden" id="reportModal" aria-label="Report Information">
+  <header class="modal-header">
+    <div>
+      <h2>Generate Professional Report</h2>
+      <p>Complete project information first. The report renders only after pressing Generate.</p>
+    </div>
+    <button class="ghost-close" id="reportClose">✕</button>
+  </header>
+
+  <div class="modal-body two-col">
+    <form class="form-section" id="reportForm" autocomplete="off">
+      <h3>Project Information</h3>
+      <label>Project Name<input type="text" id="f_project" placeholder="e.g. Bridge Deck Inspection 2026" /></label>
+      <label>Subject<input type="text" id="f_subject" placeholder="Honeycomb Defect Assessment" /></label>
+      <label>Location<input type="text" id="f_location" placeholder="Project location / zone" /></label>
+      <label>Structural Type
+        <select id="f_structural_type">
+          <option value="">— Select —</option><option>Beam</option><option>Column</option><option>Slab</option><option>Wall</option><option>Foundation</option><option>Bridge Deck</option><option>Pile</option><option>Other</option>
+        </select>
+      </label>
+      <label>Structural Name / ID<input type="text" id="f_structural_name" placeholder="e.g. COL-3A, B-14" /></label>
+      <label>Date of Inspection<input type="date" id="f_date" /></label>
+      <label>Inspector Name<input type="text" id="f_inspector" placeholder="Inspector / Engineer" /></label>
+      <label>Company<input type="text" id="f_company" placeholder="Company / Laboratory" /></label>
+      <label>Weather<input type="text" id="f_weather" placeholder="e.g. Clear, 32°C" /></label>
+      <label class="full">Remarks<textarea id="f_remark" rows="3" placeholder="Site remarks or engineering notes"></textarea></label>
+    </form>
+
+    <div class="form-section preview-section">
+      <h3>Captured Records (<span id="captureCount">0</span>)</h3>
+      <div id="reportThumbs" class="thumbs-row report-photo-grid"></div>
+      <p class="empty-text" id="noCaptureNote">No captures yet — go back and press Capture during scan.</p>
+      <div class="method-mini">
+        <b>Report Includes</b>
+        <span>Executive Summary</span><span>Statistics Dashboard</span><span>Photo Cards</span><span>Defect Analysis</span><span>AI Assessment</span><span>Risk Level</span><span>Repair Recommendation</span><span>Method Statement</span><span>Signature Area</span><span>QR Placeholder</span><span>Footer Branding</span>
+      </div>
+    </div>
+  </div>
+
+  <footer class="modal-footer">
+    <button id="generatePreviewBtn" class="primary wide-btn">Generate Report Preview</button>
+    <button id="exportPngBtn" class="export-btn" disabled>Export PNG</button>
+    <button id="exportPdfBtn" class="export-btn" disabled>Export PDF</button>
+  </footer>
+</section>
+
+<!-- Report Preview -->
+<div class="report-preview-backdrop hidden" id="previewBackdrop"></div>
+<section class="report-preview hidden" id="reportPreviewWrap">
+  <div class="preview-toolbar">
+    <strong>Report Preview</strong>
+    <div><button id="previewClose" class="ghost-close">✕</button></div>
+  </div>
+  <div id="reportPreview" class="report-paper"></div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="js/camera.js"></script>
+<script src="js/concrete-surface.js"></script>
+<script src="js/measurement.js"></script>
+<script src="js/yolo-detector.js"></script>
+<script src="js/ar-overlay.js"></script>
+<script src="js/hud.js"></script>
+<script src="js/export.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
